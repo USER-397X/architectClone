@@ -1,3 +1,5 @@
+from transformers import DataCollatorForCasaulLM
+from pathlib import Path
 
 def load_unsloth_4bit(model_path):
     from unsloth import FastLanguageModel
@@ -14,3 +16,17 @@ def load_unsloth_4bit(model_path):
             to_fix = getattr(to_fix, 'model', None)
     return model, tokenizer
 
+
+def save_model_and_tokenizer(store_path, model, tokenizer):
+    model.save_pretrained(store_path)
+    tokenizer.save_pretrained(store_path)
+    
+    # Convert the string path to a Path object
+    store_path_obj = Path(store_path)
+    
+    # Use the / operator to join paths and create the file path
+    to_delete = store_path_obj / 'tokenizer.model'
+    
+    # Check if the file exists and delete it if it does
+    if to_delete.is_file():
+        to_delete.unlink()

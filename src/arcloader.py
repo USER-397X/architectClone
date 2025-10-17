@@ -96,4 +96,27 @@ class ArcDataset(object):
     @classmethod
     def get_base_key(cls, key):
         return cls.get_base_key_and_reply_num(key)[0]
+    
+    def get_task(self, key, max_tokens=None, len_name=None, **kwargs):
+            while True:
+                fmt = self.fmt_task(key, **kwargs)
+                if max_tokens is None or self.count_tokens(fmt[len_name]) <= max_tokens:
+                    break
+                if not key.split('.')[-1].startswith('ex'):
+                    base_key = self.get_base_key(key)
+                    key = f"{key}.ex{'-'.join(map(str, range(len(self.challenge[base_key]['train']))))}"
+                key_split = key.split('.')
+                key_split[-1] = '-'.join(key_split[-1].split('-')[:-1])
+                assert len(key_split[-1]) > 2 and key_split[-1].startswith('ex')
+                key = '.'.join(key_split)
+            return key, fmt
+
+    def convert_with_token_limit(self, **kwargs):
+        out_list = []
+        new_keys = []
+        for key in tqdm(self.keys, desc='convert dataset'):
+            key, fmt = self.get_task(key, **kwargs)
+            new_keys.append(key)
+            out_list.append(fmt)
+        return out_list, self.change_keys(new_keys)
 
